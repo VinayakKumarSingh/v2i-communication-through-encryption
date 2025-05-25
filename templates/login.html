@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - EVS{% endblock %}
+
+{% block head_extra %}
+<style>
+    .login-container {
+        margin-top: 50px;
+        max-width: 400px;
+        padding: 30px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    .login-container h2 {
+        margin-bottom: 20px;
+        color: #333;
+        text-align: center;
+    }
+    .form-control:focus {
+        box-shadow: none;
+        border-color: #007bff;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container mx-auto">
+    <h2>Login</h2>
+    {# Flash messages are handled in base.html, no need to repeat here unless specific placement is needed #}
+    <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+            <label class="form-check-label" for="remember">Remember Me</label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Login</button>
+    </form>
+    <p class="text-center mt-3">
+        Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - EVS Dashboard{% endblock %}
+
+{% block head_extra %}
+    {# Leaflet CSS is included in base.html if user is police #}
+    <style>
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            /* Utilizing Bootstrap theme colors from base.html for navbar, applying similar logic here */
+            font-weight: bold;
+        }
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: .25rem; /* Bootstrap's default border radius */
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6; /* Softer border color */
+        }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        .table thead th {
+            background-color: #e9ecef; /* Light grey for table header */
+            border-color: #dee2e6;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    {# Flash messages are handled in base.html #}
+
+    <h2 class="mb-3">{{ current_user.role.capitalize() }} Dashboard</h2>
+    <hr class="mb-4">
+
+    {% if current_user.is_authenticated %}
+        {% if current_user.role == 'police' %}
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    Vehicle Map (Real-time Tracking)
+                </div>
+                <div class="card-body">
+                    <div id="map"></div>
+                    <p class="text-muted"><small>Map displays the latest known locations of vehicles. Ensure GPS data is being received by the server. Data on map updates based on current table entries.</small></p>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                Recent Vehicle Data
+            </div>
+            <div class="card-body">
+                {% if data_list %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-bordered">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Vehicle ID</th>
+                                    <th>Server Timestamp</th>
+                                    <th>Device Timestamp</th>
+                                    {% if current_user.role == 'doctor' %}
+                                        <th>Patient Name</th>
+                                        <th>Medical ID</th>
+                                        <th>Temperature (°C)</th>
+                                        <th>Humidity (%)</th>
+                                    {% elif current_user.role == 'police' %}
+                                        <th>Latitude</th>
+                                        <th>Longitude</th>
+                                        <th>Speed (km/h)</th>
+                                        <th>Accel X (g)</th>
+                                        <th>Accel Y (g)</th>
+                                        <th>Accel Z (g)</th>
+                                    {% endif %}
+                                    <!-- <th>Raw Payload (Debug)</th> -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in data_list %}
+                                    <tr>
+                                        <td>{{ item.id }}</td>
+                                        <td>{{ item.vehicle_id }}</td>
+                                        <td>{{ item.timestamp_server.strftime('%Y-%m-%d %H:%M:%S UTC') if item.timestamp_server else 'N/A' }}</td>
+                                        <td>{{ item.payload.timestamp_device if item.payload.timestamp_device else 'N/A' }}</td>
+                                        {% if current_user.role == 'doctor' %}
+                                            <td>{{ item.payload.patient_name if item.payload.patient_name else 'N/A' }}</td>
+                                            <td>{{ item.payload.medical_id if item.payload.medical_id else 'N/A' }}</td>
+                                            <td>{{ "%.2f"|format(item.payload.temperature_c|float) if item.payload.temperature_c is not none else 'N/A' }}</td>
+                                            <td>{{ "%.1f"|format(item.payload.humidity_percent|float) if item.payload.humidity_percent is not none else 'N/A' }}</td>
+                                        {% elif current_user.role == 'police' %}
+                                            <td>{{ "%.5f"|format(item.payload.latitude|float) if item.payload.latitude is not none else 'N/A' }}</td>
+                                            <td>{{ "%.5f"|format(item.payload.longitude|float) if item.payload.longitude is not none else 'N/A' }}</td>
+                                            <td>{{ "%.1f"|format(item.payload.speed_kmh|float) if item.payload.speed_kmh is not none else 'N/A' }}</td>
+                                            <td>{{ "%.2f"|format(item.payload.accel_x_g|float) if item.payload.accel_x_g is not none else 'N/A' }}</td>
+                                            <td>{{ "%.2f"|format(item.payload.accel_y_g|float) if item.payload.accel_y_g is not none else 'N/A' }}</td>
+                                            <td>{{ "%.2f"|format(item.payload.accel_z_g|float) if item.payload.accel_z_g is not none else 'N/A' }}</td>
+                                        {% endif %}
+                                        <!-- <td><small>{{ item.payload|tojson }}</small></td> -->
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        No data available yet. Ensure the ESP32 device is sending data to the server.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-danger" role="alert">
+            You are not logged in. Please <a href="{{ url_for('login') }}" class="alert-link">login</a> to view the dashboard.
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    {# jQuery, Popper.js, Bootstrap JS are included in base.html #}
+    {# Leaflet JS is included in base.html if user is police #}
+
+    {% if current_user.is_authenticated and current_user.role == 'police' %}
+    <script>
+        $(document).ready(function() {
+            if (typeof L === 'undefined') {
+                console.error("Leaflet library not loaded. Map functionality will be unavailable.");
+                $('#map').html('<div class="alert alert-danger">Map library (Leaflet) could not be loaded. Please check console.</div>');
+                return;
+            }
+
+            // Initialize Leaflet map
+            var map = L.map('map').setView([20.5937, 78.9629], 5); // Default view (e.g., center of India)
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 18,
+                tileSize: 512,
+                zoomOffset: -1
+            }).addTo(map);
+
+            var vehicleMarkers = {}; // To store markers for each vehicle
+
+            function updateMapWithVehicleData(vehiclePayload, vehicleId) {
+                if (vehiclePayload && typeof vehiclePayload.latitude !== 'undefined' && typeof vehiclePayload.longitude !== 'undefined') {
+                    var lat = parseFloat(vehiclePayload.latitude);
+                    var lon = parseFloat(vehiclePayload.longitude);
+                    var id = vehicleId || vehiclePayload.vehicle_id || 'UnknownVehicle';
+
+                    if (isNaN(lat) || isNaN(lon)) {
+                        console.warn("Invalid lat/lon for vehicle: " + id, vehiclePayload);
+                        return;
+                    }
+
+                    var popupContent = `<b>Vehicle ID: ${id}</b><br>
+                                      Latitude: ${lat.toFixed(5)}<br>
+                                      Longitude: ${lon.toFixed(5)}<br>
+                                      Speed: ${vehiclePayload.speed_kmh ? parseFloat(vehiclePayload.speed_kmh).toFixed(1) + ' km/h' : 'N/A'}<br>
+                                      Timestamp: ${vehiclePayload.timestamp_device || 'N/A'}`;
+
+                    if (vehicleMarkers[id]) {
+                        vehicleMarkers[id].setLatLng([lat, lon]).setPopupContent(popupContent);
+                    } else {
+                        vehicleMarkers[id] = L.marker([lat, lon]).addTo(map)
+                            .bindPopup(popupContent);
+                    }
+                    // map.panTo([lat, lon]); // Optionally pan to the latest marker
+                } else {
+                    console.log("Map update skipped: data missing lat/lon or vehicleId.", vehiclePayload);
+                }
+            }
+
+            function refreshMapFromTableData() {
+                console.log("Refreshing map data from current table entries.");
+                var latestVehicleData = {};
+
+                {% if data_list %}
+                    {% for item in data_list %}
+                        {% if item.payload and item.payload.latitude is not none and item.payload.longitude is not none and item.vehicle_id %}
+                            // Store the most recent entry for each vehicle_id based on server timestamp or item.id as a proxy
+                            // This simple logic assumes data_list is somewhat ordered or we just take the last seen.
+                            // A more robust solution would sort by timestamp if available and reliable.
+                            latestVehicleData[String("{{ item.vehicle_id }}")] = {{ item.payload|tojson }};
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                
+                // Clear existing markers before adding new/updated ones to avoid stale markers if a vehicle stops sending data
+                // for (var m_id in vehicleMarkers) {
+                //     map.removeLayer(vehicleMarkers[m_id]);
+                // }
+                // vehicleMarkers = {}; // Reset markers object
+
+                if (Object.keys(latestVehicleData).length > 0) {
+                    for (var vId in latestVehicleData) {
+                        if (latestVehicleData.hasOwnProperty(vId)) {
+                            updateMapWithVehicleData(latestVehicleData[vId], vId);
+                        }
+                    }
+                } else {
+                    console.log("No valid vehicle data found in the template to display on the map.");
+                     $('#map').append('<p class="text-center text-muted">No vehicle location data to display on map.</p>');
+                }
+            }
+
+            refreshMapFromTableData();
+
+            // Placeholder for future AJAX-based refresh
+            // setInterval(function() {
+            //     console.log("Fetching latest vehicle locations via AJAX...");
+            //     fetch("{{ url_for('get_latest_vehicle_data') }}") // Assuming you create this route
+            //         .then(response => response.json())
+            //         .then(data => {
+            //             if(data && data.locations) {
+            //                  // Clear existing markers before adding new/updated ones
+            //                  for (var m_id in vehicleMarkers) {
+            //                      map.removeLayer(vehicleMarkers[m_id]);
+            //                  }
+            //                  vehicleMarkers = {}; // Reset markers object
+            //                 data.locations.forEach(vehicle => {
+            //                     updateMapWithVehicleData(vehicle.payload, vehicle.vehicle_id);
+            //                 });
+            //             }
+            //         })
+            //         .catch(error => console.error('Error fetching map data:', error));
+            // }, 15000); // Refresh every 15 seconds
+        });
+    </script>
+    {% endif %}
+{% endblock %}
