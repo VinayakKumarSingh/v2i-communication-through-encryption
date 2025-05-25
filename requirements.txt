@@ -1,0 +1,23 @@
+Flask>=2.0.0
+Flask-Login>=0.5.0
+Flask-SQLAlchemy>=2.5.0
+SQLAlchemy>=2.0.0
+Werkzeug>=2.0.0
+Jinja2>=3.0.0
+cryptography>=3.4.0 # For password hashing and potentially other crypto operations
+
+# --- Attribute-Based Encryption (ABE) --- 
+# If you plan to implement ABE, you'll need a library.
+# Choose one and uncomment/install. charm-crypto can be complex to install.
+# charm-crypto>=0.5.0  # Powerful but can have tricky dependencies
+# py_ecc>=6.0.0       # Used by some ABE schemes, might be a dependency
+# pyabe               # Another ABE library option
+
+# --- Production Web Server (Optional) ---
+# For deploying in a production environment, consider using a WSGI server.
+# gunicorn  # Popular WSGI server for Unix-like systems
+# waitress  # WSGI server, works on Windows and Unix-like systems
+
+# Note: It's best practice to pin exact versions for reproducible environments, e.g.:
+# Flask==2.3.2
+# After installing, you can generate a pinned list with: pip freeze > requirements.txt

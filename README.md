@@ -1,4 +1,3 @@
-# v2i-communication-through-encryption
 # Smart Healthcare Emergency Vehicle Tracking and Monitoring System - Raspberry Pi Server
 
 This directory contains the Flask web server application for the Smart Healthcare Emergency Vehicle Tracking and Monitoring System. It handles user authentication, data storage, role-based access control (potentially with Attribute-Based Encryption - ABE), and provides a web interface for authorized users (doctors, police) to view relevant data.
