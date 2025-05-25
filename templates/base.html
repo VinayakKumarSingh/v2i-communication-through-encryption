@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Emergency Vehicle System{% endblock %}</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Optional: Leaflet CSS for map -->
+    {% if current_user and current_user.is_authenticated and current_user.role == 'police' %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    {% endif %}
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f4f7f6; /* Light grey background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background-color: #343a40; /* Dark navbar */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand, .nav-link, .navbar-text {
+            color: #f8f9fa !important; /* Light text on dark navbar */
+        }
+        .nav-link:hover {
+            color: #adb5bd !important; /* Lighter text on hover */
+        }
+        .content-wrapper {
+            flex: 1;
+            padding-top: 20px;
+            padding-bottom: 80px; /* Space for footer */
+        }
+        .footer {
+            background-color: #343a40; /* Dark footer */
+            color: #f8f9fa;
+            padding: 20px 0;
+            text-align: center;
+            font-size: 0.9em;
+            width: 100%;
+            margin-top: auto; /* Pushes footer to bottom if content is short */
+        }
+        .alert {
+            margin-bottom: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+            border: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .card-header {
+            background-color: #007bff; /* Primary blue */
+            color: white;
+            font-weight: 500;
+            border-bottom: none;
+        }
+        /* Specific styles for map if needed */
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: .25rem;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('login') }}">EVS Monitor</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {{ current_user.username }} ({{ current_user.role.capitalize() }})
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarUserDropdown">
+                                <!-- <a class="dropdown-item" href="#">Profile</a> -->
+                                <!-- <div class="dropdown-divider"></div> -->
+                                <a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="content-wrapper container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <span>Smart Healthcare Emergency Vehicle System &copy; {{ current_year }}</span>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    {% if current_user and current_user.is_authenticated and current_user.role == 'police' %}
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    {% endif %}
+    {% block scripts %}{% endblock %}
+</body>
+</html>

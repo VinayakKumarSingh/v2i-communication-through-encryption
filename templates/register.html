@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - EVS{% endblock %}
+
+{% block head_extra %}
+<style>
+    .register-container {
+        margin-top: 30px; /* Adjusted margin */
+        max-width: 500px;
+        padding: 30px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    .register-container h2 {
+        margin-bottom: 20px;
+        color: #333;
+        text-align: center;
+    }
+    .form-control:focus {
+        box-shadow: none;
+        border-color: #007bff;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container mx-auto">
+    <h2>Register New User</h2>
+    {# Flash messages are handled in base.html #}
+    <form method="POST" action="{{ url_for('register') }}">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+            <label for="role">Role</label>
+            <select class="form-control" id="role" name="role" required>
+                <option value="" disabled selected>Select Role</option>
+                <option value="doctor">Doctor</option>
+                <option value="police">Police</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="attributes">Attributes (JSON format)</label>
+            <textarea class="form-control" id="attributes" name="attributes" rows="3" placeholder='e.g., {"hospital_id": "XYZ"}'></textarea>
+            <small class="form-text text-muted">E.g., Doctor: <code>{"hospital_id": "CityGeneral"}</code>. Police: <code>{"precinct_id": "Precinct7"}</code>. Can be empty.</small>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Register</button>
+    </form>
+    <p class="text-center mt-3">
+        Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+    </p>
+</div>
+{% endblock %}
